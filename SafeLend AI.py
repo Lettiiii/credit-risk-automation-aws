@@ -32,92 +32,7 @@ Purpose:
 --------
 This sets up the logging framework for code executed in the user namespace.
 """
-
-from typing import Optional
-
-
-def _set_logging(log_dir: str, log_file: str, log_name: Optional[str] = None):
-    import os
-    import logging
-    from logging.handlers import RotatingFileHandler
-
-    level = logging.INFO
-    max_bytes = 5 * 1024 * 1024
-    backup_count = 5
-
-    # fallback to /tmp dir on access, helpful for local dev setup
-    try:
-        os.makedirs(log_dir, exist_ok=True)
-    except Exception:
-        log_dir = "/tmp/kernels/"
-
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, log_file)
-
-    logger = logging.getLogger() if not log_name else logging.getLogger(log_name)
-    logger.handlers = []
-    logger.setLevel(level)
-
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
-    # Rotating file handler
-    fh = RotatingFileHandler(filename=log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    logger.info(f"Logging initialized for {log_name}.")
-
-
-_set_logging("/var/log/computeEnvironments/kernel/", "kernel.log")
-_set_logging("/var/log/studio/data-notebook-kernel-server/", "metrics.log", "metrics")
-
-import logging
-from sagemaker_studio import ClientConfig, sqlutils, sparkutils, dataframeutils
-
-logger = logging.getLogger(__name__)
-logger.info("Initializing sparkutils")
-spark = sparkutils.init()
-logger.info("Finished initializing sparkutils")
-
-def _reset_os_path():
-    """
-    Reset the process's working directory to handle mount timing issues.
-    
-    This function resolves a race condition where the Python process starts
-    before the filesystem mount is complete, causing the process to reference
-    old mount paths and inodes. By explicitly changing to the mounted directory
-    (/home/sagemaker-user), we ensure the process uses the correct, up-to-date
-    mount point.
-    
-    The function logs stat information (device ID and inode) before and after
-    the directory change to verify that the working directory is properly
-    updated to reference the new mount.
-    
-    Note:
-        This is executed at module import time to ensure the fix is applied
-        as early as possible in the kernel initialization process.
-    """
-    try:
-        import os
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.info("---------Before------")
-        logger.info("CWD: %s", os.getcwd())
-        logger.info("stat('.'): %s %s", os.stat('.').st_dev, os.stat('.').st_ino)
-        logger.info("stat('/home/sagemaker-user'): %s %s", os.stat('/home/sagemaker-user').st_dev, os.stat('/home/sagemaker-user').st_ino)
-
-        os.chdir("/home/sagemaker-user")
-
-        logger.info("---------After------")
-        logger.info("CWD: %s", os.getcwd())
-        logger.info("stat('.'): %s %s", os.stat('.').st_dev, os.stat('.').st_ino)
-        logger.info("stat('/home/sagemaker-user'): %s %s", os.stat('/home/sagemaker-user').st_dev, os.stat('/home/sagemaker-user').st_ino)
-    except Exception as e:
-        logger.exception(f"Failed to reset working directory: {e}")
-
-_reset_os_path()
-
+#Inspecting the Raw CSV Structure Before Formatting for XGBoost
 import pandas as pd
 import boto3
 
@@ -136,6 +51,7 @@ print("\nChecking for any non-numeric columns:")
 non_numeric = df.select_dtypes(include=['object']).columns.tolist()
 print(f"Non-numeric columns: {non_numeric}")
 
+#Inspecting the Dataset and Detecting the Target Column
 from sagemaker_studio import Project
 import pandas as pd
 import numpy as np
@@ -168,6 +84,7 @@ else:
     print("\nNo obvious target column found. Please specify the target column name.")
     print("Available columns:", df.columns.tolist())
 
+#Preparing and Formatting the Dataset for XGBoost Training
 from sagemaker_studio import Project
 import pandas as pd
 import numpy as np
@@ -216,6 +133,9 @@ print(f"  - Feature columns: {X.shape[1]}")
 print(f"\nFirst few rows (numeric target, features):")
 print(xgb_df.head(3))
 
+
+# SageMaker XGBoost Training Launcher
+#Loads preprocessed training data from the project S3 bucket and runs a training job using the built-in XGBoost container.
 import boto3
 import sagemaker
 from sagemaker.estimator import Estimator
