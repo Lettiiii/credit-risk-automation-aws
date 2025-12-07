@@ -145,6 +145,8 @@ All generated artifacts and CSVs are saved back into S3.
 * Apply decision thresholds for lending strategies  
 * Export risk-stratified borrower lists:
 
+## Results
+
 **Dashboard visuals summarize the financial impact of each strategy**
 
 **probability_distribution**  
@@ -161,7 +163,6 @@ All generated artifacts and CSVs are saved back into S3.
 
 These outputs reflect real credit-policy trade-offs between approval volume and default risk.
 
-## Results
 ### Model Performance
 * **AUC-ROC:** 0.70 on held-out data  
 * Well calibrated for threshold optimization
